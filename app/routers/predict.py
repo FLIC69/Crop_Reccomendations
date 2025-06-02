@@ -4,7 +4,6 @@ from app.models import model, predictions
 import torch
 import numpy as np
 
-
 router = APIRouter()
 
 @router.post("/")
@@ -18,18 +17,18 @@ def get_prediction(data: predictions.PredictInput):
         )
 
     try:
-        match data.model:
-            case "StandardModel":
-                chosen_model = model.StandardModel()
+        if data.model ==  "StandardModel":
+            chosen_model = model.StandardModel()
 
-            case "SimpleModel":
-                chosen_model = model.SimpleNN()
+        if data.model ==  "SimpleModel":
+            chosen_model = model.SimpleNN()
 
-            case "DeepModel":
-                chosen_model = model.DeeperNN()
+        if data.model ==  "DeepModel":
+            chosen_model = model.DeeperNN()
 
-            case "SuperDeepModel":
-                chosen_model = model.SuperDeepNN()
+        if data.model ==  "SuperDeepModel":
+            chosen_model = model.SuperDeepNN()
+
 
         if chosen_model is None:
             raise HTTPException(
@@ -59,6 +58,3 @@ def get_prediction(data: predictions.PredictInput):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
         )
-
-
-

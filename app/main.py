@@ -1,16 +1,10 @@
 from fastapi import FastAPI, Request, logger
 from app.routers import predict
+from app.utils import logger
 
 app = FastAPI()
 
-# Logging middleware
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    response = await call_next(request)
-    sanitized_input = {k: "****" if k == "password" else v 
-                      for k,v in request.items()}
-    logger.info(f"{request.url.path} - {sanitized_input}")
-    return response
+app.add_middleware(logger.LoggingMiddleware)
 
 app.include_router(predict.router, prefix="/predict")
 
