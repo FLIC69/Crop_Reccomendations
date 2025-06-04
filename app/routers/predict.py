@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Security
 from app.models import model, predictions
+from app.utils import api_key
 
 import torch
 import numpy as np
@@ -7,7 +8,9 @@ import numpy as np
 router = APIRouter()
 
 @router.post("/")
-def get_prediction(data: predictions.PredictInput):
+def get_prediction(data: predictions.PredictInput, api_key: str = Security(api_key.get_api_key)):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
     chosen_model = None
 
     if len(data.features) != 7:
@@ -35,6 +38,8 @@ def get_prediction(data: predictions.PredictInput):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect model or no model specified, options are: (StandardModel, SimpleNN, DeeperNN, SuperDeepNN)"
             )
+        
+        chosen_model.to(device)
         
         features = torch.FloatTensor([data.features])
 
