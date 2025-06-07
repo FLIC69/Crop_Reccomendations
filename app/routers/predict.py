@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Security
 from app.models import model, predictions
 from app.utils import api_key
+import torch.nn.functional as F
+from sklearn.preprocessing import StandardScaler
+import joblib
 
 import torch
 import numpy as np
@@ -38,24 +41,33 @@ def get_prediction(data: predictions.PredictInput, api_key: str = Security(api_k
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect model or no model specified, options are: (StandardModel, SimpleNN, DeeperNN, SuperDeepNN)"
             )
-        
+                
+        chosen_model.eval()
         chosen_model.to(device)
         
         features = torch.FloatTensor([data.features])
+        scaler = joblib.load("app/ai_models/scaler.pkl")
+        encoded_features = torch.FloatTensor(scaler.transform(features))
 
         with torch.no_grad():
-            outputs = chosen_model(features)
-            probs = outputs.numpy()[0]
+            # Forward pass to get model outputs
+            outputs = chosen_model(encoded_features)
+            
+            # Calculate probabilities using softmax
+            probs = F.softmax(outputs, dim=1).numpy()[0]  # Get first batch item if batch size > 1
+            
+            # Get predicted class index and confidence
             pred = int(np.argmax(probs))
             confidence = float(np.max(probs))
-
-        predicted_class_name = model.LABEL_MAPPING.get(pred, "unknown")
+            
+            # Get class name from mapping
+            predicted_class_name = model.LABEL_MAPPING.get(pred, "unknown")
 
         return predictions.PredictOutput(
             predicted_class=predicted_class_name,
             model_used=data.model,
             features=data.features,
-            confidence=confidence
+            confidence=confidence,
             )
 
     except Exception as e:

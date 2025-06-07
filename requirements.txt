@@ -9,3 +9,4 @@ torchvision==0.16.2
 python-multipart==0.0.6
 pydantic==2.5.3
 python-dotenv
+joblib
